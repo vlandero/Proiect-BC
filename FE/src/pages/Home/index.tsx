@@ -26,6 +26,7 @@ export default function Home() {
         const account = await provider.getSigner(accountSign[0]);
         await provider.getBalance(account.getAddress());
         setAccount(account);
+        setErrText(null);
       } catch (err) {
         console.log(err);
         setErrText("Please allow the connection to proceed.");
