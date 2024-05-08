@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 import { ethers } from 'ethers';
 import Home from './pages/Home';
+import AddEvent from './pages/AddEvent';
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/" Component={Home} />
+          <Route path="/addEvent" Component={AddEvent} />
         </Routes>
       </div>
     </Router>
