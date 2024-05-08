@@ -7,50 +7,111 @@ type TicketType = {
   quantity: number;
 };
 
-export default function AddEvent() {
-  const [events, setEvents] = useState<TicketType[] | null>([]);
-  
-  const createEvent = async () => {
-    const description = document.querySelector(".event-description-input") as HTMLInputElement;
-    const name = document.querySelector(".event-name-input") as HTMLInputElement;
-    const price = document.querySelector(".event-price-input") as HTMLInputElement;
-    const quantity = document.querySelector(".event-quantity-input") as HTMLInputElement;
-    const event = {
-      name: name.value,
-      description: description.value,
-      price: parseInt(price.value, 10), 
-      quantity: parseInt(quantity.value, 10),
-    };
-    if (events !== null) {
-      setEvents([...events, event]);
-    } else {
-      setEvents([event]);
-    }
+function TicketTypeComponent({ ticket }: { ticket: TicketType }) {
+  return (
+    <div>
+      <h2>{ticket.name}</h2>
+      <p>Description: {ticket.description}</p>
+      <p>Ticket Price: {ticket.price}</p>
+      <p>Tickets left: {ticket.quantity}</p>
+    </div>
+  );
+}
+
+function AddTicketTypeComponent({
+  addEvent,
+}: {
+  addEvent: (ticketType: TicketType) => void;
+}) {
+  const defaultTicketType: TicketType = {
+    name: "",
+    description: "",
+    price: 0,
+    quantity: 0,
   };
-  
-  useEffect(() => {
+  const [ticketType, setTicketType] = useState<TicketType>(defaultTicketType);
+  const onChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setTicketType({ ...ticketType, [e.target.name]: e.target.value });
+  };
+
+  const validateTicketType = () => {
+    if (
+      ticketType.name === "" ||
+      ticketType.description === "" ||
+      ticketType.price === 0 ||
+      ticketType.quantity === 0
+    ) {
+      return false;
+    }
+    return true;
+  };
+
+  const onClick = () => {
+    if (!validateTicketType()) {
+      alert("Please fill all the fields");
+      return;
+    }
+    addEvent(ticketType);
+    setTicketType(defaultTicketType);
+  };
+  return (
+    <div>
+      <h4>Add Ticket Type</h4>
+      <input
+        value={ticketType.name}
+        onChange={onChange}
+        name="name"
+        type="text"
+        placeholder="Ticket Type"
+      />
+      <textarea
+        value={ticketType.description}
+        onChange={onChange}
+        name="description"
+        placeholder="Description"
+      />
+      <input
+        value={ticketType.price}
+        onChange={onChange}
+        name="price"
+        type="number"
+        placeholder="Price"
+      />
+      <input
+        value={ticketType.quantity}
+        onChange={onChange}
+        name="quantity"
+        type="number"
+        placeholder="Quantity"
+      />
+      <button onClick={onClick}>Create Ticket Type</button>
+    </div>
+  );
+}
+
+export default function AddEvent() {
+  const [events, setEvents] = useState<TicketType[]>([]);
+
+  const addEvent = (ticket: TicketType) => {
+    setEvents([...events, ticket]);
+  };
+  const createEvent = async () => {
     console.log(events);
-  }, [events]);
+  };
   return (
     <div className="add-event-container">
-        <h1>
-          Add Ticket Type
-        </h1>
-        <input className="event-name-input" type="text" placeholder="Ticket Type" />
-        <input className="event-description-input" type="text" placeholder="Description" />
-        <input className="event-price-input" type="number" placeholder="Price" />
-        <input className="event-quantity-input" type="number" placeholder="Quantity" />
-        <button onClick={createEvent}>Create Ticket Type</button>
-        <div>
-          {events?.map((ticket, index) => (
-            <div key={index}>
-              <h2>{ticket.name}</h2>
-              <p>Description: {ticket.description}</p>
-              <p>Ticket Price: {ticket.price}</p>
-              <p>Tickets left: {ticket.quantity}</p>
-            </div>
-          ))}
+      <h3>Create event</h3>
+      <AddTicketTypeComponent addEvent={addEvent} />
+      <div>
+        {events?.map((ticket, index) => (
+          <div key={index}>
+            <TicketTypeComponent ticket={ticket} />
           </div>
+        ))}
+      </div>
+      <button onClick={createEvent}>Create Event</button>
     </div>
   );
 }

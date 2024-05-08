@@ -11,7 +11,7 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/" Component={Home} />
-          <Route path="/addEvent" Component={AddEvent} />
+          <Route path="/add-event" Component={AddEvent} />
         </Routes>
       </div>
     </Router>
