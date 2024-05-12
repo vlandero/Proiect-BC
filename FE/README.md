@@ -11,3 +11,4 @@ Pagini:
     - resell option
     - buy resold option
 - my tickets page (connect wallet and see tickets)
+- BLOCK BUYING TICKET FOR EVENT IF DATE PASSED
