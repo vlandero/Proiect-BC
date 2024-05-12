@@ -67,8 +67,8 @@ contract TicketMarket {
     event EventEdited(uint eventId, string name, string description, uint date);
 
     function compareStrings(string memory a, string memory b) private pure returns (bool) {
-    return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
-}
+        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    }
 
     function putTicketBulkOnResale(uint eventId, string memory ticketType, uint price, uint ticketAmount) public { // ticket amount, split and merge ticket bulks
         require(compareStrings(resoldTicketsBulks[msg.sender][eventId][ticketType].ticketType, ticketType), "You do not own the ticket.");
@@ -84,7 +84,20 @@ contract TicketMarket {
         emit TicketOnSale(eventId, ticketType, price, true);
     }
 
-    // edit ticket bulk on sale function TODO
+    function editTicketBulkPrice(uint eventId, string memory ticketType, uint price, uint amountOnSale) public {
+        require(compareStrings(resoldTicketsBulks[msg.sender][eventId][ticketType].ticketType, ticketType), "You do not own the ticket.");
+        require(!compareStrings(resoldTicketsBulks[msg.sender][eventId][ticketType].ticketType, ""), "You do not own the ticket.");
+        require(resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale > 0, "The ticket is not on sale.");
+        require(price >= 0, "Price must be greater (or equal) than zero.");
+        require(amountOnSale <= resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale + resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale, "Not enough tickets to put on sale.");
+
+        resoldTicketsBulks[msg.sender][eventId][ticketType].price = price;
+        uint prevAmountOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale;
+        resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale = amountOnSale;
+        resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale += prevAmountOnSale - amountOnSale;
+
+        emit TicketPriceUpdated(eventId, ticketType, price);
+    }
 
     function createEvent(string memory name, string memory description, uint dateStart, uint dateEnd, TicketsBulk[] memory availableTickets) public {
         uint eventId = nextEventId++;
