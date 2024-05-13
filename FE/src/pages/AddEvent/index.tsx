@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { ethers } from "ethers";
+import React, { useState } from "react";
+import ConnectAccountModal from "../../components/ConnectAccountModal";
 
 type TicketType = {
   name: string;
@@ -19,9 +21,9 @@ function TicketTypeComponent({ ticket }: { ticket: TicketType }) {
 }
 
 function AddTicketTypeComponent({
-  addEvent,
+  addTicketType,
 }: {
-  addEvent: (ticketType: TicketType) => void;
+  addTicketType: (ticketType: TicketType) => void;
 }) {
   const defaultTicketType: TicketType = {
     name: "",
@@ -53,7 +55,7 @@ function AddTicketTypeComponent({
       alert("Please fill all the fields");
       return;
     }
-    addEvent(ticketType);
+    addTicketType(ticketType);
     setTicketType(defaultTicketType);
   };
   return (
@@ -92,26 +94,63 @@ function AddTicketTypeComponent({
 }
 
 export default function AddEvent() {
-  const [events, setEvents] = useState<TicketType[]>([]);
+  const [account, setAccount] = useState<ethers.JsonRpcSigner | null>(null);
+  const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
+  const [name, setName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
-  const addEvent = (ticket: TicketType) => {
-    setEvents([...events, ticket]);
+  const [modalOpen, setModalOpen] = useState<boolean>(true);
+
+  const addTicketType = (ticket: TicketType) => {
+    setTicketTypes([...ticketTypes, ticket]);
   };
   const createEvent = async () => {
-    console.log(events);
+    console.log(ticketTypes);
+    setModalOpen(true);
   };
   return (
     <div className="add-event-container">
       <h3>Create event</h3>
-      <AddTicketTypeComponent addEvent={addEvent} />
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        type="text"
+        placeholder="Event Name"
+      />
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder="Description"
+      />
+      <input
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+        type="date"
+        placeholder="Start Date"
+      />
+      <input
+        value={endDate}
+        onChange={(e) => setEndDate(e.target.value)}
+        type="date"
+        placeholder="End Date"
+      />
+      <AddTicketTypeComponent addTicketType={addTicketType} />
       <div>
-        {events?.map((ticket, index) => (
+        {ticketTypes?.map((ticket, index) => (
           <div key={index}>
             <TicketTypeComponent ticket={ticket} />
           </div>
         ))}
       </div>
       <button onClick={createEvent}>Create Event</button>
+      <ConnectAccountModal
+        isOpen={modalOpen}
+        close={() => {
+          setModalOpen(false);
+        }}
+      />
     </div>
   );
 }

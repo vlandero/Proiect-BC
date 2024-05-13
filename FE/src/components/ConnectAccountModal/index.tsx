@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { ethers } from "ethers";
-import styles from "./index.module.css";
-const provider = new ethers.BrowserProvider(window.ethereum);
+import React, { useEffect, useState } from 'react'
+import Modal from '../Modal';
+import { ethers } from 'ethers';
+import styles from './index.module.css';
 
-export default function Home() {
-  const [account, setAccount] = useState<ethers.JsonRpcSigner | null>(null);
+export default function ConnectAccountModal({isOpen, close}: {isOpen: boolean, close: () => void}) {
+const provider = new ethers.BrowserProvider(window.ethereum);
+const [account, setAccount] = useState<ethers.JsonRpcSigner | null>(null);
   const [balance, setBalance] = useState<string | null>(null);
   const [errText, setErrText] = useState<string | null>(null);
 
@@ -35,8 +36,10 @@ export default function Home() {
       setErrText("Please install a wallet extension.");
     }
   };
+    if (!isOpen) return null;
   return (
-    <div>
+    <Modal isOpen={isOpen} close={close}>
+        <div>
       <div>{account?.address}</div>
       <button onClick={connectWallet}>Connect Wallet</button>
       <div>
@@ -46,5 +49,6 @@ export default function Home() {
       <div>{balance}</div>
       <div className={styles["err"]}>{errText}</div>
     </div>
-  );
+    </Modal>
+  )
 }
