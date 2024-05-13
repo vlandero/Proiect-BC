@@ -51,7 +51,7 @@ contract TicketMarket {
     }
 
 
-    uint public nextEventId = 0;
+    uint public nextEventId = 1;
 
     mapping(uint => Event) public events;
     mapping(uint => mapping(string => TicketsBulk)) public unsoldTicketsBulks;
