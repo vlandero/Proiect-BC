@@ -19,6 +19,7 @@ contract TicketMarket {
         string ticketType;
         uint price;
         string description;
+        address owner;
     }
 
     struct TicketsBulk {
@@ -99,7 +100,9 @@ contract TicketMarket {
         emit TicketPriceUpdated(eventId, ticketType, price);
     }
 
-    function createEvent(string memory name, string memory description, uint dateStart, uint dateEnd, TicketsBulk[] memory availableTickets) public {
+    function createEvent(string memory name, string memory description, uint dateStart, uint dateEnd, TicketsBulk[] memory availableTickets) public returns (uint) {
+        require(dateStart > block.timestamp, "Event must start in the future.");
+        require(dateEnd >= dateStart, "Event must end after it starts.");
         uint eventId = nextEventId++;
         events[eventId] = Event(eventId, name, description, dateStart, dateEnd, msg.sender);
         emit EventCreated(eventId, name, description, dateStart);
@@ -109,7 +112,9 @@ contract TicketMarket {
             unsoldTicketsBulks[eventId][availableTickets[i].ticketType] = tb;
             emit TicketBulkCreated(eventId, availableTickets[i].price, availableTickets[i].ticketType);
         }
+        return eventId;
     }
+
 
     function editEvent(uint eventId, string memory name, string memory description, uint dateStart, uint dateEnd, TicketsBulk[] memory availableTickets) public {
         require(events[eventId].creator == msg.sender, "You are not the creator of this event.");
@@ -209,7 +214,7 @@ contract TicketMarket {
         uint currentAmountOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale;
         uint currentAmountNotOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale;
 
-        ResoldTicketsBulk memory rtb = ResoldTicketsBulk(eventId, currentAmountOnSale, amount + currentAmountNotOnSale, ticketType, 0, unsoldTicketsBulks[eventId][ticketType].description);
+        ResoldTicketsBulk memory rtb = ResoldTicketsBulk(eventId, currentAmountOnSale, amount + currentAmountNotOnSale, ticketType, 0, unsoldTicketsBulks[eventId][ticketType].description, msg.sender);
         resoldTicketsBulks[msg.sender][eventId][ticketType] = rtb;
 
         emit TicketTransferred(eventId, ticketType, previousOwner, msg.sender, msg.value);
@@ -232,7 +237,7 @@ contract TicketMarket {
         uint currentAmountOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale;
         uint currentAmountNotOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale;
 
-        ResoldTicketsBulk memory rtb = ResoldTicketsBulk(eventId, currentAmountOnSale, amount + currentAmountNotOnSale, ticketType, 0, unsoldTicketsBulks[eventId][ticketType].description);
+        ResoldTicketsBulk memory rtb = ResoldTicketsBulk(eventId, currentAmountOnSale, amount + currentAmountNotOnSale, ticketType, 0, unsoldTicketsBulks[eventId][ticketType].description, msg.sender);
         resoldTicketsBulks[msg.sender][eventId][ticketType] = rtb;
 
         emit TicketTransferred(eventId, ticketType, owner, msg.sender, msg.value);
