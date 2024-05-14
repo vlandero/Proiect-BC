@@ -1,18 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Modal from "../Modal";
 import { ethers } from "ethers";
 import styles from "./index.module.css";
 import ABI from "../../TicketMarket.json";
-import { listEventsMapper } from "../../utils/mappers";
 
-const TICKET_CONTRACT_ADDRESS = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
+const TICKET_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 export default function ConnectAccountModal({
   isOpen,
   close,
+  callback,
+  children
 }: {
   isOpen: boolean;
   close: () => void;
+  callback: (contract: ethers.Contract) => Promise<void>;
+  children?: React.ReactNode;
 }) {
   const provider = new ethers.BrowserProvider(window.ethereum);
   const [account, setAccount] = useState<ethers.JsonRpcSigner | null>(null);
@@ -43,8 +46,7 @@ export default function ConnectAccountModal({
           ABI,
           account
         );
-        const res = await ctr.listEvents();
-        console.log(listEventsMapper(res));
+        callback(ctr);
       } catch (e) {
         console.log(e);
       }
@@ -64,6 +66,7 @@ export default function ConnectAccountModal({
         <div className={styles["err"]}>{errText}</div>
       </div>
       <button onClick={testCtr}>OK</button>
+      {children}
     </Modal>
   );
 }

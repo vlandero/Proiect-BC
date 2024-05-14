@@ -1,6 +1,8 @@
 import { ethers } from "ethers";
 import React, { useState } from "react";
 import ConnectAccountModal from "../../components/ConnectAccountModal";
+import { CreateEventInput } from "../../utils/types";
+import { useNavigate } from "react-router-dom";
 
 type TicketType = {
   name: string;
@@ -94,14 +96,18 @@ function AddTicketTypeComponent({
 }
 
 export default function AddEvent() {
-  const [account, setAccount] = useState<ethers.JsonRpcSigner | null>(null);
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
   const [name, setName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  const [startDateTime, setStartDateTime] = useState<string>("");
+  const [endDateTime, setEndDateTime] = useState<string>("");
 
-  const [modalOpen, setModalOpen] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [extraModalError, setExtraModalError] = useState<string>("");
+
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+
+  const navigate = useNavigate();
 
   const addTicketType = (ticket: TicketType) => {
     setTicketTypes([...ticketTypes, ticket]);
@@ -125,16 +131,16 @@ export default function AddEvent() {
         placeholder="Description"
       />
       <input
-        value={startDate}
-        onChange={(e) => setStartDate(e.target.value)}
-        type="date"
-        placeholder="Start Date"
+        value={startDateTime}
+        onChange={(e) => setStartDateTime(e.target.value)}
+        type="datetime-local"
+        placeholder="Start Date and Time"
       />
       <input
-        value={endDate}
-        onChange={(e) => setEndDate(e.target.value)}
-        type="date"
-        placeholder="End Date"
+        value={endDateTime}
+        onChange={(e) => setEndDateTime(e.target.value)}
+        type="datetime-local"
+        placeholder="End Date and Time"
       />
       <AddTicketTypeComponent addTicketType={addTicketType} />
       <div>
@@ -150,7 +156,35 @@ export default function AddEvent() {
         close={() => {
           setModalOpen(false);
         }}
-      />
+        callback={async (contract: ethers.Contract) => {
+          const eventInput = [
+            name,
+            description,
+            new Date(startDateTime).getTime() / 1000,
+            new Date(endDateTime).getTime() / 1000,
+            ticketTypes.map((ticket) => ({
+              eventId: 0,
+              amount: ticket.quantity,
+              ticketType: ticket.name,
+              price: ticket.price,
+              description: ticket.description,
+            })),
+          ];
+          try {
+            setIsLoading(true);
+            const res = await contract.createEvent(...eventInput);
+            const eventId = res[0][0].toString();
+            setIsLoading(false);
+            navigate("/event/" + eventId);
+          } catch (e) {
+            setIsLoading(false);
+            setExtraModalError("Error creating event");
+          }
+        }}
+      >
+        {isLoading ? <div>Loading...</div> : null}
+        {extraModalError ? <div>{extraModalError}</div> : null}
+      </ConnectAccountModal>
     </div>
   );
 }
