@@ -1,7 +1,6 @@
 import { ethers } from "ethers";
 import React, { useState } from "react";
 import ConnectAccountModal from "../../components/ConnectAccountModal";
-import { CreateEventInput } from "../../utils/types";
 import { useNavigate } from "react-router-dom";
 
 type TicketType = {
@@ -76,6 +75,7 @@ function AddTicketTypeComponent({
         name="description"
         placeholder="Description"
       />
+      <div>Price in ETH</div>
       <input
         value={ticketType.price}
         onChange={onChange}
@@ -83,6 +83,7 @@ function AddTicketTypeComponent({
         type="number"
         placeholder="Price"
       />
+      <div>Quantity</div>
       <input
         value={ticketType.quantity}
         onChange={onChange}
@@ -106,8 +107,6 @@ export default function AddEvent() {
   const [extraModalError, setExtraModalError] = useState<string>("");
 
   const [modalOpen, setModalOpen] = useState<boolean>(false);
-
-  const navigate = useNavigate();
 
   const addTicketType = (ticket: TicketType) => {
     setTicketTypes([...ticketTypes, ticket]);
@@ -166,17 +165,19 @@ export default function AddEvent() {
               eventId: 0,
               amount: ticket.quantity,
               ticketType: ticket.name,
-              price: ticket.price,
+              price: BigInt(ticket.price) * BigInt(1e18),
               description: ticket.description,
             })),
           ];
           try {
             setIsLoading(true);
             const res = await contract.createEvent(...eventInput);
-            const eventId = res[0][0].toString();
+            console.log(res)
+            //const eventId = res[0].toString();
             setIsLoading(false);
-            navigate("/event/" + eventId);
+            //navigate("/event/" + eventId);
           } catch (e) {
+            console.log(e)
             setIsLoading(false);
             setExtraModalError("Error creating event");
           }

@@ -22,7 +22,7 @@ export const ticketsBulkMapper = (ev: any): TicketsBulk[] => {
     eventId: parseInt(ticket[0].toString()),
     amount: parseInt(ticket[1].toString()),
     ticketType: ticket[2].toString(),
-    price: parseInt(ticket[3].toString()),
+    price: Number(ticket[3] / BigInt(1e18)),
     description: ticket[4].toString(),
   }));
 };
@@ -33,7 +33,7 @@ export const resoldTicketsBulkMapper = (ev: any): ResoldTicketsBulk[] => {
     amountOnSale: parseInt(ticket[1].toString()),
     amountNotOnSale: parseInt(ticket[2].toString()),
     ticketType: ticket[3].toString(),
-    price: parseInt(ticket[4].toString()),
+    price: Number(ticket[4] / BigInt(1e18)),
     description: ticket[5].toString(),
     owner: ticket[6].toString(),
   }));

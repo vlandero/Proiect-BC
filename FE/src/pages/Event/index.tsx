@@ -20,7 +20,7 @@ function TicketComponent({
 }) {
   const { eventId } = useParams();
   const [amount, setAmount] = useState<number>(0);
-  const [modalOpen, setModalOpen] = useState<boolean>(true);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
   const navigate = useNavigate();
   const buy = async () => {
     if (amount === 0) {
@@ -34,11 +34,10 @@ function TicketComponent({
       <ConnectAccountModal
         isOpen={modalOpen}
         close={() => {
-          alert("Please connect your account to see the events!");
+          setModalOpen(false);
         }}
         callback={async (contract: ethers.Contract) => {
           try {
-            // to see wei vs ether
             if (owner) {
               await contract.buyResoldTickets(
                 eventId,
@@ -46,12 +45,12 @@ function TicketComponent({
                 owner,
                 amount,
                 {
-                  value: amount * ticket.price,
+                  value: BigInt(amount) * BigInt(ticket.price) * BigInt(1e18),
                 }
               );
             } else {
               await contract.buyNewTickets(eventId, ticket.ticketType, amount, {
-                value: amount * ticket.price,
+                value: BigInt(amount) * BigInt(ticket.price) * BigInt(1e18),
               });
               setModalOpen(false);
               navigate(`/my-tickets`);
@@ -63,8 +62,8 @@ function TicketComponent({
       />
       <h4>{ticket.ticketType}</h4>
       <p>{ticket.description}</p>
-      <p>{ticket.price}</p>
-      <p>{ticket.amount}</p>
+      <p>{ticket.price} ETH</p>
+      <p>{ticket.amount} tickets</p>
       <div>
         <button onClick={buy}>Buy</button>
         <div>
@@ -106,6 +105,7 @@ export default function Event() {
           const resoldTicketsRes = await contract.getResoldTicketsForEvent(
             eventId
           );
+          console.log(resoldTicketsRes)
           setResoldTickets(resoldTicketsBulkMapper(resoldTicketsRes));
           setModalOpen(false);
         }}
