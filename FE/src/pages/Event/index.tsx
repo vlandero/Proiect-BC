@@ -21,6 +21,9 @@ function TicketComponent({
   const { eventId } = useParams();
   const [amount, setAmount] = useState<number>(0);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
+
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [extraModalError, setExtraModalError] = useState<string>("");
   const navigate = useNavigate();
   const buy = async () => {
     if (amount === 0) {
@@ -38,6 +41,7 @@ function TicketComponent({
         }}
         callback={async (contract: ethers.Contract) => {
           try {
+            setIsLoading(true);
             if (owner) {
               await contract.buyResoldTickets(
                 eventId,
@@ -52,14 +56,19 @@ function TicketComponent({
               await contract.buyNewTickets(eventId, ticket.ticketType, amount, {
                 value: BigInt(amount) * BigInt(ticket.price) * BigInt(1e18),
               });
+              setIsLoading(false);
               setModalOpen(false);
               navigate(`/my-tickets`);
             }
           } catch (error: any) {
-            console.log(error);
+            setIsLoading(false);
+            setExtraModalError("Error buying tickets");
           }
         }}
-      />
+      >
+        {isLoading ? <div>Loading...</div> : null}
+        {extraModalError ? <div>{extraModalError}</div> : null}
+      </ConnectAccountModal>
       <h4>{ticket.ticketType}</h4>
       <p>{ticket.description}</p>
       <p>{ticket.price} ETH</p>
@@ -105,7 +114,7 @@ export default function Event() {
           const resoldTicketsRes = await contract.getResoldTicketsForEvent(
             eventId
           );
-          console.log(resoldTicketsRes)
+          console.log(resoldTicketsRes);
           setResoldTickets(resoldTicketsBulkMapper(resoldTicketsRes));
           setModalOpen(false);
         }}

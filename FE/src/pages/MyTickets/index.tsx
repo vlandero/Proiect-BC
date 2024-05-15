@@ -18,6 +18,9 @@ function TicketComponent({
   const [editing, setEditing] = useState<boolean>(false);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
 
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [extraModalError, setExtraModalError] = useState<string>("");
+
   const editTicket = () => {
     if (editing) {
       setEditing(false);
@@ -40,7 +43,7 @@ function TicketComponent({
         }}
         callback={async (contract: ethers.Contract) => {
           try {
-            console.log(newPrice, newAmount)
+            setIsLoading(true);
             await contract.editTicketsBulk(
               ticket.eventId,
               ticket.ticketType,
@@ -63,11 +66,16 @@ function TicketComponent({
                   : t
               )
             );
+            setIsLoading(false);
           } catch (error) {
-            console.log(error);
+            setIsLoading(false);
+            setExtraModalError("Error editing ticket");
           }
         }}
-      />
+      >
+        {isLoading ? <div>Loading...</div> : null}
+        {extraModalError ? <div>{extraModalError}</div> : null}
+      </ConnectAccountModal>
       {onSale && (
         <button onClick={editTicket}>{editing ? "Cancel" : "Edit"}</button>
       )}

@@ -249,6 +249,8 @@ contract TicketMarket {
             delete resoldTicketsBulks[owner][eventId][ticketType];
         }
         owner.transfer(msg.value);
+
+        eventToOwners[eventId].push(msg.sender);
         
         uint currentAmountOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale;
         uint currentAmountNotOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale;
