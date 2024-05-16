@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import styles from "./index.module.css";
 import ABI from "../../TicketMarket.json";
 
-const TICKET_CONTRACT_ADDRESS = "0x0165878A594ca255338adfa4d48449f69242Eb8F";
+const TICKET_CONTRACT_ADDRESS = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
 
 export default function ConnectAccountModal({
   isOpen,

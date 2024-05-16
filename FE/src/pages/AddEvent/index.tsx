@@ -108,6 +108,8 @@ export default function AddEvent() {
 
   const [modalOpen, setModalOpen] = useState<boolean>(false);
 
+  const navigate = useNavigate();
+
   const addTicketType = (ticket: TicketType) => {
     setTicketTypes([...ticketTypes, ticket]);
   };
@@ -173,13 +175,12 @@ export default function AddEvent() {
             setIsLoading(true);
             const res = await contract.createEvent(...eventInput);
             console.log(res)
-            //const eventId = res[0].toString();
             setIsLoading(false);
-            //navigate("/event/" + eventId);
-          } catch (e) {
+            navigate("/events")
+          } catch (e: any) {
             console.log(e)
             setIsLoading(false);
-            setExtraModalError("Error creating event");
+            setExtraModalError(e.reason || "Error creating event");
           }
         }}
       >

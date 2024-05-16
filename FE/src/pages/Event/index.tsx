@@ -56,13 +56,13 @@ function TicketComponent({
               await contract.buyNewTickets(eventId, ticket.ticketType, amount, {
                 value: BigInt(amount) * BigInt(ticket.price) * BigInt(1e18),
               });
-              setIsLoading(false);
-              setModalOpen(false);
-              navigate(`/my-tickets`);
             }
+            setIsLoading(false);
+            setModalOpen(false);
+            navigate(`/my-tickets`);
           } catch (error: any) {
             setIsLoading(false);
-            setExtraModalError("Error buying tickets");
+            setExtraModalError(error.reason || "Error buying tickets");
           }
         }}
       >
@@ -71,8 +71,8 @@ function TicketComponent({
       </ConnectAccountModal>
       <h4>{ticket.ticketType}</h4>
       <p>{ticket.description}</p>
-      <p>{ticket.price} ETH</p>
-      <p>{ticket.amount} tickets</p>
+      <p>{ticket.price} ETH / ticket</p>
+      <p>{ticket.amount} tickets available</p>
       <div>
         <button onClick={buy}>Buy</button>
         <div>
