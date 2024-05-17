@@ -95,10 +95,6 @@ describe("TicketMarket", function () {
         },
       ]);
 
-    console.log(addr1.getAddress());
-    console.log(addr2.getAddress());
-    console.log(addr3.getAddress());
-
     await ticketMarket
       .connect(addr2)
       .buyNewTickets(1, ticketType, 5, { value: ticketPrice.mul(5) });
@@ -122,4 +118,41 @@ describe("TicketMarket", function () {
 
     expect(boughtResoldTickets.amountOnSale).to.equal(1); // din 4, 3 au fost cumparate
   });
+
+  it("Should buy new tickets and save in withdrawal", async function () {
+    const eventName = "Test Event";
+    const eventDescription = "This is a test event";
+    const dateStart = Math.floor(Date.now() / 1000) + 3600;
+    const dateEnd = Math.floor(Date.now() / 1000) + 7200;
+    const ticketType = "VIP";
+    const ticketAmount = 10;
+    const ticketPrice = ethers.utils.parseEther("2.0");
+
+
+    await ticketMarket
+      .connect(addr2)
+      .createEvent(eventName, eventDescription, dateStart, dateEnd, [
+        {
+          eventId: 1,
+          amount: ticketAmount,
+          ticketType: ticketType,
+          price: ticketPrice,
+          description: "VIP ticket",
+        },
+      ]);
+
+    await ticketMarket
+      .connect(addr1)
+      .buyNewTickets(1, ticketType, 4, { value: ticketPrice.mul(5) });
+
+    const pendingWithdrawals = await ticketMarket.getPendingWithdrawal(
+      addr1.address
+    );
+
+    const ownerWithdrawal = await ticketMarket.connect(addr1).getOwnerPendingWithdrawal();
+
+    expect(pendingWithdrawals).to.equal(ticketPrice);
+    expect(ownerWithdrawal).to.equal(ticketPrice.mul(4).mul(5).div(100));
+  });
+  
 });
