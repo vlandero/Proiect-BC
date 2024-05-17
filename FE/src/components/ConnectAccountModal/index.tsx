@@ -1,23 +1,28 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Modal from "../Modal";
 import { ethers } from "ethers";
 import styles from "./index.module.css";
 import ABI from "../../TicketMarket.json";
+import { useNavigate } from "react-router-dom";
 
-const TICKET_CONTRACT_ADDRESS = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+export const TICKET_CONTRACT_ADDRESS =
+  "0x73511669fd4dE447feD18BB79bAFeAC93aB7F31f";
+export const provider = new ethers.BrowserProvider(window.ethereum);
 
 export default function ConnectAccountModal({
   isOpen,
   close,
   callback,
-  children
+  children,
 }: {
   isOpen: boolean;
   close: () => void;
-  callback: (contract: ethers.Contract) => Promise<void>;
+  callback: (
+    contract: ethers.Contract,
+    signer: ethers.JsonRpcSigner
+  ) => Promise<void>;
   children?: React.ReactNode;
 }) {
-  const provider = new ethers.BrowserProvider(window.ethereum);
   const [account, setAccount] = useState<ethers.JsonRpcSigner | null>(null);
   const [errText, setErrText] = useState<string | null>(null);
 
@@ -41,12 +46,8 @@ export default function ConnectAccountModal({
   const testCtr = async () => {
     if (account) {
       try {
-        const ctr = new ethers.Contract(
-          TICKET_CONTRACT_ADDRESS,
-          ABI,
-          account
-        );
-        callback(ctr);
+        const ctr = new ethers.Contract(TICKET_CONTRACT_ADDRESS, ABI, account);
+        callback(ctr, account);
       } catch (e) {
         console.log(e);
       }

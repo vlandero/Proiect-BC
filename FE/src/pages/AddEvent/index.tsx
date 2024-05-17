@@ -1,7 +1,11 @@
 import { ethers } from "ethers";
 import React, { useState } from "react";
-import ConnectAccountModal from "../../components/ConnectAccountModal";
+import ConnectAccountModal, {
+  TICKET_CONTRACT_ADDRESS,
+  provider,
+} from "../../components/ConnectAccountModal";
 import { useNavigate } from "react-router-dom";
+import ABI from "../../TicketMarket.json";
 
 type TicketType = {
   name: string;
@@ -157,7 +161,19 @@ export default function AddEvent() {
         close={() => {
           setModalOpen(false);
         }}
-        callback={async (contract: ethers.Contract) => {
+        callback={async (contract, signer) => {
+          contract.on(
+            "EventCreated",
+            async (eventId, name, description, dateStart, creator) => {
+              console.log("received event");
+              console.log(creator)
+              const signerAddress = await signer.getAddress();
+              console.log(signerAddress)
+              if (creator === signerAddress) {
+                navigate(`/event/${eventId}`);
+              }
+            }
+          );
           const eventInput = [
             name,
             description,
@@ -174,11 +190,10 @@ export default function AddEvent() {
           try {
             setIsLoading(true);
             const res = await contract.createEvent(...eventInput);
-            console.log(res)
+            console.log(res);
             setIsLoading(false);
-            navigate("/events")
           } catch (e: any) {
-            console.log(e)
+            console.log(e);
             setIsLoading(false);
             setExtraModalError(e.reason || "Error creating event");
           }

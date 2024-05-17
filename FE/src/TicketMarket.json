@@ -25,6 +25,12 @@
         "internalType": "uint256",
         "name": "date",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
       }
     ],
     "name": "EventCreated",
@@ -286,13 +292,7 @@
       }
     ],
     "name": "createEvent",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -564,7 +564,7 @@
             "type": "address"
           }
         ],
-        "internalType": "struct TicketMarket.ResoldTicketsBulk[]",
+        "internalType": "struct TicketValidation.ResoldTicketsBulk[]",
         "name": "",
         "type": "tuple[]"
       }
@@ -614,7 +614,7 @@
             "type": "address"
           }
         ],
-        "internalType": "struct TicketMarket.ResoldTicketsBulk[]",
+        "internalType": "struct TicketValidation.ResoldTicketsBulk[]",
         "name": "",
         "type": "tuple[]"
       }

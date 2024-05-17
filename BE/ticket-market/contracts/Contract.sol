@@ -74,7 +74,7 @@ contract TicketMarket {
 
     mapping (uint => address[]) public eventToOwners;
 
-    event EventCreated(uint eventId, string name, string description, uint date);
+    event EventCreated(uint eventId, string name, string description, uint date, address creator);
     event TicketBulkCreated(uint eventId, uint price, string ticketType);
     event TicketTransferred(uint eventId, string ticketType, address from, address to, uint price);
     event TicketPriceUpdated(uint eventId, string ticketType, uint price);
@@ -113,13 +113,13 @@ contract TicketMarket {
     function createEvent(string memory name, string memory description, uint dateStart, uint dateEnd, TicketsBulk[] memory availableTickets) public ValidDate(dateStart, dateEnd) {
         uint eventId = nextEventId++;
         events[eventId] = Event(eventId, name, description, dateStart, dateEnd, msg.sender);
-        emit EventCreated(eventId, name, description, dateStart);
         for (uint i = 0; i < availableTickets.length; i++) {
             addToSet(availableTickets[i].ticketType);
             TicketsBulk memory tb = TicketsBulk(eventId, availableTickets[i].amount, availableTickets[i].ticketType, availableTickets[i].price, availableTickets[i].description);
             unsoldTicketsBulks[eventId][availableTickets[i].ticketType] = tb;
             emit TicketBulkCreated(eventId, availableTickets[i].price, availableTickets[i].ticketType);
         }
+        emit EventCreated(eventId, name, description, dateStart, msg.sender);
     }
 
     function deleteEvent(uint eventId) public {
