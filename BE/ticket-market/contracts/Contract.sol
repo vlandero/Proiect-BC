@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-contract TicketMarket {
-    enum TicketForSale { OnSale, NotOnSale }
-    struct Event {
-        uint id;
-        string name;
-        string description;
-        uint dateStart;
-        uint dateEnd;
-        address creator;
+library StringLibrary {
+    function compare(string memory a, string memory b) internal pure returns (bool) {
+        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
+}
 
+library TicketValidation{
+    using StringLibrary for string;
     struct ResoldTicketsBulk {
         uint eventId;
         uint amountOnSale;
@@ -20,6 +17,23 @@ contract TicketMarket {
         uint price;
         string description;
         address owner;
+    }
+    function validateOwnershipAndType(ResoldTicketsBulk storage ticket, string memory ticketType) internal view {
+        require(ticket.ticketType.compare(ticketType), "Owner does not own the ticket.");
+        require(!ticket.ticketType.compare(""), "Ticket type is unspecified.");
+    }
+}
+
+contract TicketMarket {
+    using TicketValidation for TicketValidation.ResoldTicketsBulk;
+    enum TicketForSale { OnSale, NotOnSale }
+    struct Event {
+        uint id;
+        string name;
+        string description;
+        uint dateStart;
+        uint dateEnd;
+        address creator;
     }
 
     struct TicketsBulk {
@@ -56,7 +70,7 @@ contract TicketMarket {
 
     mapping(uint => Event) public events;
     mapping(uint => mapping(string => TicketsBulk)) public unsoldTicketsBulks;
-    mapping(address => mapping(uint => mapping(string => ResoldTicketsBulk))) public resoldTicketsBulks;
+    mapping(address => mapping(uint => mapping(string => TicketValidation.ResoldTicketsBulk))) public resoldTicketsBulks;
 
     mapping (uint => address[]) public eventToOwners;
 
@@ -67,13 +81,23 @@ contract TicketMarket {
     event TicketOnSale(uint ticketId, string ticketType, uint price, bool isOnSale);
     event EventEdited(uint eventId, string name, string description, uint date);
 
-    function compareStrings(string memory a, string memory b) private pure returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    modifier ValidDate(uint dateStart, uint dateEnd) {
+        require(dateStart > block.timestamp, "Event must start in the future.");
+        require(dateEnd >= dateStart, "Event must end after it starts.");
+        _;
+    }
+
+    modifier CheckBalanceAndWithdrawExceeded(uint amount) {
+        require(msg.value >= amount, "Insufficient funds.");
+        uint excess = msg.value - amount;
+        if (excess > 0) {
+            payable(msg.sender).transfer(excess);
+        }
+        _;
     }
 
     function editTicketsBulk(uint eventId, string memory ticketType, uint price, uint amountOnSale) public {
-        require(compareStrings(resoldTicketsBulks[msg.sender][eventId][ticketType].ticketType, ticketType), "You do not own the ticket.");
-        require(!compareStrings(resoldTicketsBulks[msg.sender][eventId][ticketType].ticketType, ""), "You do not own the ticket.");
+        resoldTicketsBulks[msg.sender][eventId][ticketType].validateOwnershipAndType(ticketType);
         require(resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale + resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale > 0, "You own no tickets of this type.");
         require(price >= 0, "Price must be greater (or equal) than zero.");
         require(amountOnSale <= resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale + resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale, "Not enough tickets to put on sale.");
@@ -86,9 +110,7 @@ contract TicketMarket {
         emit TicketPriceUpdated(eventId, ticketType, price);
     }
 
-    function createEvent(string memory name, string memory description, uint dateStart, uint dateEnd, TicketsBulk[] memory availableTickets) public {
-        require(dateStart > block.timestamp, "Event must start in the future.");
-        require(dateEnd >= dateStart, "Event must end after it starts.");
+    function createEvent(string memory name, string memory description, uint dateStart, uint dateEnd, TicketsBulk[] memory availableTickets) public ValidDate(dateStart, dateEnd) {
         uint eventId = nextEventId++;
         events[eventId] = Event(eventId, name, description, dateStart, dateEnd, msg.sender);
         emit EventCreated(eventId, name, description, dateStart);
@@ -102,16 +124,14 @@ contract TicketMarket {
 
     function deleteEvent(uint eventId) public {
         require(events[eventId].creator == msg.sender, "You are not the creator of this event.");
-        require(events[eventId].dateStart > block.timestamp, "Event has already started");
         for (uint i = 0; i < ticketTypesSet.values.length; i++) {
             delete unsoldTicketsBulks[eventId][ticketTypesSet.values[i]];
         }
         delete events[eventId];
     }
 
-    function editEvent(uint eventId, string memory name, string memory description, uint dateStart, uint dateEnd, TicketsBulk[] memory availableTickets) public {
+    function editEvent(uint eventId, string memory name, string memory description, uint dateStart, uint dateEnd, TicketsBulk[] memory availableTickets) public ValidDate(dateStart, dateEnd){
         require(events[eventId].creator == msg.sender, "You are not the creator of this event.");
-        require(events[eventId].dateStart > block.timestamp, "Event has already started");
         events[eventId].name = name;
         events[eventId].description = description;
         events[eventId].dateStart = dateStart;
@@ -170,8 +190,7 @@ contract TicketMarket {
         return availableTickets;
     }
     
-    function getResoldTicketsForEvent(uint eventId) public view returns (ResoldTicketsBulk[] memory) {
-        require(events[eventId].dateStart > block.timestamp, "Event has already started");
+    function getResoldTicketsForEvent(uint eventId) public view ValidDate(events[eventId].dateStart, events[eventId].dateEnd) returns (TicketValidation.ResoldTicketsBulk[] memory) {
         uint count = 0;
         for(uint i = 0; i < eventToOwners[eventId].length; i++) {
             for (uint j = 0; j < ticketTypesSet.values.length; j++) {
@@ -180,7 +199,7 @@ contract TicketMarket {
                 }
             }
         }
-        ResoldTicketsBulk[] memory resoldTickets = new ResoldTicketsBulk[](count);
+        TicketValidation.ResoldTicketsBulk[] memory resoldTickets = new TicketValidation.ResoldTicketsBulk[](count);
         count = 0;
         for(uint i = 0; i < eventToOwners[eventId].length; i++) {
             for (uint j = 0; j < ticketTypesSet.values.length; j++) {
@@ -192,7 +211,7 @@ contract TicketMarket {
         return resoldTickets;
     }
 
-    function getTicketBulksForOwner() public view returns (ResoldTicketsBulk[] memory) {
+    function getTicketBulksForOwner() public view returns (TicketValidation.ResoldTicketsBulk[] memory) {
         uint count = 0;
         for (uint i = 0; i < nextEventId; i++) {
             for (uint j = 0; j < ticketTypesSet.values.length; j++) {
@@ -201,7 +220,7 @@ contract TicketMarket {
                 }
             }
         }
-        ResoldTicketsBulk[] memory resoldTickets = new ResoldTicketsBulk[](count);
+        TicketValidation.ResoldTicketsBulk[] memory resoldTickets = new TicketValidation.ResoldTicketsBulk[](count);
         count = 0;
         for (uint i = 0; i < nextEventId; i++) {
             for (uint j = 0; j < ticketTypesSet.values.length; j++) {
@@ -213,50 +232,48 @@ contract TicketMarket {
         return resoldTickets;
     }
 
-    function buyNewTickets(uint eventId, string memory ticketType, uint amount) public payable {
+    function buyNewTickets(uint eventId, string memory ticketType, uint amount) public payable ValidDate(events[eventId].dateStart, events[eventId].dateEnd) CheckBalanceAndWithdrawExceeded(unsoldTicketsBulks[eventId][ticketType].price * amount){
         require(events[eventId].creator != msg.sender, "You cannot buy tickets for your own event.");
-        require(events[eventId].dateStart > block.timestamp, "Event has already started");
         require(unsoldTicketsBulks[eventId][ticketType].amount > amount, "No more tickets available for this type.");
-        require(msg.value == unsoldTicketsBulks[eventId][ticketType].price * amount, "Incorrect payment amount.");
         unsoldTicketsBulks[eventId][ticketType].amount -= amount;
         address payable previousOwner = payable(events[eventId].creator);
-        previousOwner.transfer(msg.value);
+        uint price = unsoldTicketsBulks[eventId][ticketType].price * amount;
+        previousOwner.transfer(price);
 
         eventToOwners[eventId].push(msg.sender);
 
         uint currentAmountOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale;
         uint currentAmountNotOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale;
 
-        ResoldTicketsBulk memory rtb = ResoldTicketsBulk(eventId, currentAmountOnSale, amount + currentAmountNotOnSale, ticketType, 0, unsoldTicketsBulks[eventId][ticketType].description, msg.sender);
+        TicketValidation.ResoldTicketsBulk memory rtb = TicketValidation.ResoldTicketsBulk(eventId, currentAmountOnSale, amount + currentAmountNotOnSale, ticketType, 0, unsoldTicketsBulks[eventId][ticketType].description, msg.sender);
         resoldTicketsBulks[msg.sender][eventId][ticketType] = rtb;
 
-        emit TicketTransferred(eventId, ticketType, previousOwner, msg.sender, msg.value);
+        emit TicketTransferred(eventId, ticketType, previousOwner, msg.sender, price);
     }
 
-    function buyResoldTickets(uint eventId, string memory ticketType, address payable owner, uint amount) public payable {
+    function buyResoldTickets(uint eventId, string memory ticketType, address payable owner, uint amount) public payable ValidDate(events[eventId].dateStart, events[eventId].dateEnd) CheckBalanceAndWithdrawExceeded(resoldTicketsBulks[owner][eventId][ticketType].price * amount){
         require(events[eventId].creator != msg.sender, "You cannot buy tickets for your own event.");
-        require(compareStrings(resoldTicketsBulks[owner][eventId][ticketType].ticketType, ticketType), "Owner does not own the ticket.");
-        require(!compareStrings(resoldTicketsBulks[owner][eventId][ticketType].ticketType, ""), "Owner does not own the ticket.");
-        require(events[eventId].dateStart > block.timestamp, "Event has already started");
+        resoldTicketsBulks[owner][eventId][ticketType].validateOwnershipAndType(ticketType);
         require(resoldTicketsBulks[owner][eventId][ticketType].amountOnSale > amount, "Not enough tickets on sale.");
-        require(msg.value == resoldTicketsBulks[owner][eventId][ticketType].price * amount, "Incorrect payment amount.");
         require(owner != msg.sender, "You cannot buy your own tickets.");
+
+        uint price = resoldTicketsBulks[owner][eventId][ticketType].price * amount;
 
         resoldTicketsBulks[owner][eventId][ticketType].amountOnSale -= amount;
 
         if (resoldTicketsBulks[owner][eventId][ticketType].amountOnSale == 0 && resoldTicketsBulks[owner][eventId][ticketType].amountNotOnSale == 0) {
             delete resoldTicketsBulks[owner][eventId][ticketType];
         }
-        owner.transfer(msg.value);
+        owner.transfer(price);
 
         eventToOwners[eventId].push(msg.sender);
         
         uint currentAmountOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale;
         uint currentAmountNotOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale;
 
-        ResoldTicketsBulk memory rtb = ResoldTicketsBulk(eventId, currentAmountOnSale, amount + currentAmountNotOnSale, ticketType, 0, unsoldTicketsBulks[eventId][ticketType].description, msg.sender);
+        TicketValidation.ResoldTicketsBulk memory rtb = TicketValidation.ResoldTicketsBulk(eventId, currentAmountOnSale, amount + currentAmountNotOnSale, ticketType, 0, unsoldTicketsBulks[eventId][ticketType].description, msg.sender);
         resoldTicketsBulks[msg.sender][eventId][ticketType] = rtb;
 
-        emit TicketTransferred(eventId, ticketType, owner, msg.sender, msg.value);
+        emit TicketTransferred(eventId, ticketType, owner, msg.sender, price);
     }
 }
