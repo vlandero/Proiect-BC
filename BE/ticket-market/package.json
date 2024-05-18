@@ -8,15 +8,15 @@
     "test": "hardhat test"
   },
   "devDependencies": {
-    "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@matterlabs/hardhat-zksync-solc": "^0.3.17",
+    "@nomiclabs/hardhat-waffle": "^2.0.6",
     "hardhat": "^2.22.4"
   },
   "dependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@openzeppelin/contracts": "^4.9.6",
     "@thirdweb-dev/contracts": "^3.8.0",
     "chai": "^4.2.0",
-    "zksync-web3": "^0.14.3",
-    "@nomiclabs/hardhat-ethers": "^2.2.3",
-    "@openzeppelin/contracts": "^4.9.4"
+    "zksync-web3": "^0.14.3"
   }
 }

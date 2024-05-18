@@ -149,10 +149,9 @@ describe("TicketMarket", function () {
       addr1.address
     );
 
-    const ownerWithdrawal = await ticketMarket.connect(addr1).getOwnerPendingWithdrawal();
+    const ownerWithdrawal = await ticketMarket.connect(addr1).getOwnerComission();
 
     expect(pendingWithdrawals).to.equal(ticketPrice);
     expect(ownerWithdrawal).to.equal(ticketPrice.mul(4).mul(5).div(100));
   });
-  
 });

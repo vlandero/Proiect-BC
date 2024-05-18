@@ -1,5 +1,10 @@
 [
   {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -203,19 +208,6 @@
     ],
     "name": "Withdrawal",
     "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "addToOwnerPendingWithdrawal",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
   },
   {
     "inputs": [
@@ -550,7 +542,7 @@
   },
   {
     "inputs": [],
-    "name": "getOwnerPendingWithdrawal",
+    "name": "getOwnerComission",
     "outputs": [
       {
         "internalType": "uint256",
@@ -901,7 +893,7 @@
   },
   {
     "inputs": [],
-    "name": "withdrawOwner",
+    "name": "withdrawOwnerComission",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

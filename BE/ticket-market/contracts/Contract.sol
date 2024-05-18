@@ -2,7 +2,9 @@
 pragma solidity ^0.8.9;
 
 import "./Withdrawable.sol";
+import "./OwnerComission.sol";
 import "hardhat/console.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 library StringLibrary {
     function compare(string memory a, string memory b) internal pure returns (bool) {
@@ -28,6 +30,7 @@ library TicketValidation{
 }
 
 contract TicketMarket is Withdrawable {
+    using SafeMath for uint256;
     using TicketValidation for TicketValidation.ResoldTicketsBulk;
     enum TicketForSale { OnSale, NotOnSale }
     struct Event {
@@ -77,6 +80,8 @@ contract TicketMarket is Withdrawable {
 
     mapping (uint256 => address[]) public eventToOwners;
 
+    OwnerComission private ownerComission;
+
     event EventCreated(uint256 eventId, string name, string description, uint256 date, address creator);
     event TicketBulkCreated(uint256 eventId, uint256 price, string ticketType);
     event TicketTransferred(uint256 eventId, string ticketType, address from, address to, uint256 price);
@@ -99,11 +104,15 @@ contract TicketMarket is Withdrawable {
         _;
     }
 
+    constructor() {
+        ownerComission = new OwnerComission();
+    }
+
     function editTicketsBulk(uint256 eventId, string memory ticketType, uint256 price, uint256 amountOnSale) external {
         resoldTicketsBulks[msg.sender][eventId][ticketType].validateOwnershipAndType(ticketType);
-        require(resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale + resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale > 0, "You own no tickets of this type.");
+        require(resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale.add(resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale) > 0, "You own no tickets of this type.");
         require(price >= 0, "Price must be greater (or equal) than zero.");
-        require(amountOnSale <= resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale + resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale, "Not enough tickets to put on sale.");
+        require(amountOnSale <= resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale.add(resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale), "Not enough tickets to put on sale.");
 
         resoldTicketsBulks[msg.sender][eventId][ticketType].price = price;
         uint256 prevAmountOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountOnSale;
@@ -241,8 +250,8 @@ contract TicketMarket is Withdrawable {
         unsoldTicketsBulks[eventId][ticketType].amount -= amount;
         address payable previousOwner = payable(events[eventId].creator);
         uint256 price = unsoldTicketsBulks[eventId][ticketType].price * amount;
-        addToOwnerPendingWithdrawal(price * 5 / 100);
-        previousOwner.transfer(price - price * 5 / 100);
+        ownerComission.addComission(price.mul(5).div(100));
+        previousOwner.transfer(price - price.mul(5).div(100));
 
         eventToOwners[eventId].push(msg.sender);
 
@@ -250,10 +259,10 @@ contract TicketMarket is Withdrawable {
         uint256 currentAmountNotOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale;
 
         string memory desc = unsoldTicketsBulks[eventId][ticketType].description;
-        TicketValidation.ResoldTicketsBulk memory rtb = TicketValidation.ResoldTicketsBulk(eventId, currentAmountOnSale, amount + currentAmountNotOnSale, ticketType, 0, desc, msg.sender);
+        TicketValidation.ResoldTicketsBulk memory rtb = TicketValidation.ResoldTicketsBulk(eventId, currentAmountOnSale, amount.add(currentAmountNotOnSale), ticketType, 0, desc, msg.sender);
         resoldTicketsBulks[msg.sender][eventId][ticketType] = rtb;
 
-        emit TicketTransferred(eventId, ticketType, previousOwner, msg.sender, price - price * 5 / 100);
+        emit TicketTransferred(eventId, ticketType, previousOwner, msg.sender, price - price.mul(5).div(100));
     }
 
     function buyResoldTickets(uint256 eventId, string memory ticketType, address payable owner, uint256 amount) external payable ValidDate(events[eventId].dateStart, events[eventId].dateEnd) CheckBalanceAndWithdrawExceeded(resoldTicketsBulks[owner][eventId][ticketType].price * amount){
@@ -269,8 +278,8 @@ contract TicketMarket is Withdrawable {
         if (resoldTicketsBulks[owner][eventId][ticketType].amountOnSale == 0 && resoldTicketsBulks[owner][eventId][ticketType].amountNotOnSale == 0) {
             delete resoldTicketsBulks[owner][eventId][ticketType];
         }
-        addToOwnerPendingWithdrawal(price * 5 / 100);
-        owner.transfer(price - price * 5 / 100);
+        ownerComission.addComission(price.mul(5).div(100));
+        owner.transfer(price - price.mul(5).div(100));
 
         eventToOwners[eventId].push(msg.sender);
         
@@ -278,9 +287,17 @@ contract TicketMarket is Withdrawable {
         uint256 currentAmountNotOnSale = resoldTicketsBulks[msg.sender][eventId][ticketType].amountNotOnSale;
 
         string memory desc = unsoldTicketsBulks[eventId][ticketType].description;
-        TicketValidation.ResoldTicketsBulk memory rtb = TicketValidation.ResoldTicketsBulk(eventId, currentAmountOnSale, amount + currentAmountNotOnSale, ticketType, 0, desc, msg.sender);
+        TicketValidation.ResoldTicketsBulk memory rtb = TicketValidation.ResoldTicketsBulk(eventId, currentAmountOnSale, amount.add(currentAmountNotOnSale), ticketType, 0, desc, msg.sender);
         resoldTicketsBulks[msg.sender][eventId][ticketType] = rtb;
 
-        emit TicketTransferred(eventId, ticketType, owner, msg.sender, price - price * 5 / 100);
+        emit TicketTransferred(eventId, ticketType, owner, msg.sender, price - price.mul(5).div(100));
+    }
+
+    function withdrawOwnerComission() external onlyOwner {
+        ownerComission.withdrawComission();
+    }
+
+    function getOwnerComission() external view onlyOwner returns (uint256) {
+        return ownerComission.getPendingComission();
     }
 }

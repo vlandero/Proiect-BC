@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Withdrawable {
+    using SafeMath for uint256;
     mapping(address => uint256) private _pendingWithdrawals;
-    uint256 private _ownerPendingWithdrawal;
-
+    
     event Withdrawal(address indexed user, uint256 amount);
 
     address private owner;
@@ -18,7 +19,12 @@ contract Withdrawable {
         _;
     }
 
-    function withdraw() external {
+    modifier onlyOwnerOrCreator(address creator) {
+        require(msg.sender == owner || msg.sender == creator, "Only owner or creator can call this function");
+        _;
+    }
+
+    function withdraw() public payable {
         uint256 amount = _pendingWithdrawals[msg.sender];
         require(amount > 0, "No pending withdrawal");
         _pendingWithdrawals[msg.sender] = 0;
@@ -26,27 +32,11 @@ contract Withdrawable {
         emit Withdrawal(msg.sender, amount);
     }
 
-    function withdrawOwner() external onlyOwner {
-        uint256 amount = _ownerPendingWithdrawal;
-        require(amount > 0, "No pending withdrawal");
-        _ownerPendingWithdrawal = 0;
-        payable(owner).transfer(amount);
-        emit Withdrawal(owner, amount);
-    }
-
-    function addToOwnerPendingWithdrawal(uint256 amount) public {
-        _ownerPendingWithdrawal += amount;
-    }
-
-    function getOwnerPendingWithdrawal() public onlyOwner view returns (uint256) {
-        return _ownerPendingWithdrawal;
-    }
-
-    function getPendingWithdrawal(address user) public view returns (uint256) {
+    function getPendingWithdrawal(address user) public onlyOwnerOrCreator(user) view returns (uint256) {
         return _pendingWithdrawals[user];
     }
 
     function _addToPendingWithdrawal(address user, uint256 amount) internal {
-        _pendingWithdrawals[user] += amount;
+        _pendingWithdrawals[user] = _pendingWithdrawals[user].add(amount);
     }
 }

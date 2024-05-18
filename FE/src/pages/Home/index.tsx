@@ -22,7 +22,7 @@ export default function Home() {
         }}
         callback={async (contract: ethers.Contract) => {
           try {
-            const res = await contract.getOwnerPendingWithdrawal();
+            const res = await contract.getOwnerComission();
             setAvailableBalance(Number(BigInt(res) / BigInt(10 ** 18)));
             setModalOpen(false);
             setCanWithdraw(true);
@@ -39,7 +39,7 @@ export default function Home() {
         }}
         callback={async (contract: ethers.Contract) => {
           try {
-            const res = await contract.withdrawOwner();
+            const res = await contract.withdrawOwnerComission();
             console.log(res);
             setWithdrawModalOpen(false);
             setAvailableBalance(0);
