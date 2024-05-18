@@ -6,7 +6,7 @@ Benescu Ioan 351
 
 https://github.com/ethers-io/ethers.js/discussions/4117
 
-Pagini:
+Pagini (ciorna):
 
 - create event with x tickets (aprobat de un admin...cum setam adminii? cel care face contractul poate seta admini)
     - select tickets of type {title, price, amount, description}[]. mai multe tipuri de bilete puse la vanzare
