@@ -32,7 +32,6 @@ library TicketValidation{
 contract TicketMarket is Withdrawable {
     using SafeMath for uint256;
     using TicketValidation for TicketValidation.ResoldTicketsBulk;
-    enum TicketForSale { OnSale, NotOnSale }
     struct Event {
         uint256 id;
         string name;
@@ -252,6 +251,7 @@ contract TicketMarket is Withdrawable {
         uint256 price = unsoldTicketsBulks[eventId][ticketType].price * amount;
         ownerComission.addComission(price.mul(5).div(100));
         previousOwner.transfer(price - price.mul(5).div(100));
+        payable(address(ownerComission)).transfer(price.mul(5).div(100));
 
         eventToOwners[eventId].push(msg.sender);
 
@@ -280,6 +280,7 @@ contract TicketMarket is Withdrawable {
         }
         ownerComission.addComission(price.mul(5).div(100));
         owner.transfer(price - price.mul(5).div(100));
+        payable(address(ownerComission)).transfer(price.mul(5).div(100));
 
         eventToOwners[eventId].push(msg.sender);
         
@@ -293,8 +294,10 @@ contract TicketMarket is Withdrawable {
         emit TicketTransferred(eventId, ticketType, owner, msg.sender, price - price.mul(5).div(100));
     }
 
-    function withdrawOwnerComission() external onlyOwner {
+    function withdrawOwnerComission() external payable onlyOwner {
+        uint256 amount = ownerComission.getPendingComission();
         ownerComission.withdrawComission();
+        payable(msg.sender).transfer(amount);
     }
 
     function getOwnerComission() external view onlyOwner returns (uint256) {

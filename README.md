@@ -1,3 +1,9 @@
+Contribuitori:
+Rosu Vlad-Andrei 351
+Benescu Ioan 351
+
+https://github.com/ethers-io/ethers.js/discussions/4117
+
 Pagini:
 
 - create event with x tickets (aprobat de un admin...cum setam adminii? cel care face contractul poate seta admini)
@@ -11,4 +17,3 @@ Pagini:
     - resell option
     - buy resold option
 - my tickets page (connect wallet and see tickets)
-- BLOCK BUYING TICKET FOR EVENT IF DATE PASSED

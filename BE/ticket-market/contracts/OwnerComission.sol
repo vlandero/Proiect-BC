@@ -9,17 +9,19 @@ contract OwnerComission is Withdrawable {
 
     event ComissionChanged(uint256 comission);
 
+
     function addComission (uint256 _comission) external onlyOwner {
         _addToPendingWithdrawal(owner, _comission);
     }
 
-    function withdrawComission() public onlyOwner {
+    function withdrawComission() public payable onlyOwner {
         withdraw();
     }
 
-    function getPendingComission() external onlyOwner view returns (uint256) {
+    function getPendingComission() public onlyOwner view returns (uint256) {
         return getPendingWithdrawal(owner);
     }
+
     constructor() {
         owner = msg.sender;
     }

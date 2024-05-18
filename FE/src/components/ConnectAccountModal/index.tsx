@@ -3,28 +3,31 @@ import Modal from "../Modal";
 import { ethers } from "ethers";
 import styles from "./index.module.css";
 import ABI from "../../TicketMarket.json";
-import { useNavigate } from "react-router-dom";
 
 export const TICKET_CONTRACT_ADDRESS =
-  "0x73511669fd4dE447feD18BB79bAFeAC93aB7F31f";
+  "0x5095d3313C76E8d29163e40a0223A5816a8037D8";
 export const provider = new ethers.BrowserProvider(window.ethereum);
 
 export default function ConnectAccountModal({
   isOpen,
   close,
   callback,
+  showEstimatedGas,
   children,
 }: {
   isOpen: boolean;
   close: () => void;
   callback: (
     contract: ethers.Contract,
-    signer: ethers.JsonRpcSigner
+    signer: ethers.JsonRpcSigner,
+    maxGas: number
   ) => Promise<void>;
+  showEstimatedGas?: boolean;
   children?: React.ReactNode;
 }) {
   const [account, setAccount] = useState<ethers.JsonRpcSigner | null>(null);
   const [errText, setErrText] = useState<string | null>(null);
+  const [desiredGas, setDesiredGas] = useState<number>(1000000);
 
   const connectWallet = async () => {
     if (window.ethereum) {
@@ -47,7 +50,7 @@ export default function ConnectAccountModal({
     if (account) {
       try {
         const ctr = new ethers.Contract(TICKET_CONTRACT_ADDRESS, ABI, account);
-        callback(ctr, account);
+        callback(ctr, account, desiredGas);
       } catch (e) {
         console.log(e);
       }
@@ -63,6 +66,17 @@ export default function ConnectAccountModal({
         <div>
           To disconnect, just remove the website from your metamask extension
           and refresh the page.
+        </div>
+        <div style={{
+          display: showEstimatedGas ? "block" : "none",
+        }}>
+          <label>Desired maximum Gas</label>
+          <input
+            type="number"
+            value={desiredGas}
+            style={{marginLeft: "10px"}}
+            onChange={(e) => setDesiredGas(parseInt(e.target.value))}
+          />
         </div>
         <div className={styles["err"]}>{errText}</div>
       </div>

@@ -128,7 +128,6 @@ describe("TicketMarket", function () {
     const ticketAmount = 10;
     const ticketPrice = ethers.utils.parseEther("2.0");
 
-
     await ticketMarket
       .connect(addr2)
       .createEvent(eventName, eventDescription, dateStart, dateEnd, [
@@ -142,16 +141,21 @@ describe("TicketMarket", function () {
       ]);
 
     await ticketMarket
-      .connect(addr1)
+      .connect(addr3)
       .buyNewTickets(1, ticketType, 4, { value: ticketPrice.mul(5) });
 
     const pendingWithdrawals = await ticketMarket.getPendingWithdrawal(
-      addr1.address
+      addr3.address
     );
 
     const ownerWithdrawal = await ticketMarket.connect(addr1).getOwnerComission();
 
     expect(pendingWithdrawals).to.equal(ticketPrice);
     expect(ownerWithdrawal).to.equal(ticketPrice.mul(4).mul(5).div(100));
+
+    const ownerBalanceBefore = await addr1.getBalance();
+    await ticketMarket.connect(addr1).withdrawOwnerComission();
+    const ownerBalanceAfter = await addr1.getBalance();
+    expect(ownerBalanceAfter > ownerBalanceBefore).to.equal(true);
   });
 });

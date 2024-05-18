@@ -157,18 +157,19 @@ export default function AddEvent() {
       </div>
       <button onClick={createEvent}>Create Event</button>
       <ConnectAccountModal
+        showEstimatedGas={true}
         isOpen={modalOpen}
         close={() => {
           setModalOpen(false);
         }}
-        callback={async (contract, signer) => {
+        callback={async (contract, signer, maxGas) => {
           contract.on(
             "EventCreated",
             async (eventId, name, description, dateStart, creator) => {
               console.log("received event");
-              console.log(creator)
+              console.log(creator);
               const signerAddress = await signer.getAddress();
-              console.log(signerAddress)
+              console.log(signerAddress);
               if (creator === signerAddress) {
                 navigate(`/event/${eventId}`);
               }
@@ -189,7 +190,12 @@ export default function AddEvent() {
           ];
           try {
             setIsLoading(true);
-            const res = await contract.createEvent(...eventInput);
+            const est = await contract.createEvent.estimateGas(...eventInput);
+            alert(`Estimated gas: ${est} gas`);
+            console.log(est);
+            const res = await contract.createEvent(...eventInput, {
+              gasLimit: maxGas,
+            });
             console.log(res);
             setIsLoading(false);
           } catch (e: any) {

@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "hardhat/console.sol";
 
 contract Withdrawable {
     using SafeMath for uint256;
-    mapping(address => uint256) private _pendingWithdrawals;
+    mapping(address => uint256) public _pendingWithdrawals;
     
     event Withdrawal(address indexed user, uint256 amount);
+    event Received(address indexed user, uint256 amount);
 
     address private owner;
 
@@ -28,7 +30,8 @@ contract Withdrawable {
         uint256 amount = _pendingWithdrawals[msg.sender];
         require(amount > 0, "No pending withdrawal");
         _pendingWithdrawals[msg.sender] = 0;
-        payable(msg.sender).transfer(amount);
+        address payable payableAddress = payable(msg.sender);
+        (payableAddress).transfer(amount);
         emit Withdrawal(msg.sender, amount);
     }
 
@@ -37,6 +40,10 @@ contract Withdrawable {
     }
 
     function _addToPendingWithdrawal(address user, uint256 amount) internal {
-        _pendingWithdrawals[user] = _pendingWithdrawals[user].add(amount);
+        _pendingWithdrawals[user] += amount;
+    }
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 }
